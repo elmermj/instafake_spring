@@ -31,16 +31,17 @@ public class SecurityConfig {
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
         return http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers("/api/users/register/**", "/api/users/login/**").permitAll() // Allow these endpoints without authentication
-                    .anyRequest().authenticated()
-            ).userDetailsService(userDetailsImpl)
-                .sessionManagement(session ->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/users/register/**", "/api/users/login/**").permitAll() // Allow these endpoints without authentication
+                        .requestMatchers("/server/medias/**").permitAll() // Allow access to media files
+                        .anyRequest().authenticated()
+                )
+                .userDetailsService(userDetailsImpl)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder(){
@@ -55,5 +56,5 @@ public class SecurityConfig {
             throw new RuntimeException(e);
         }
     }
-
 }
+

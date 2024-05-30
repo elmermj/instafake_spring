@@ -1,28 +1,24 @@
 package com.fakeco.instafake.controllers;
 
+import com.fakeco.instafake.dto.PostResponse;
 import com.fakeco.instafake.dto.PostRequest;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
+import com.fakeco.instafake.services.CommentService;
 import com.fakeco.instafake.services.FileProcessingService;
 import com.fakeco.instafake.services.PostService;
 import com.fakeco.instafake.services.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.io.IOException;
-import java.sql.Time;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -33,6 +29,9 @@ public class PostController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CommentService commentService;
 
     @Autowired
     FileProcessingService fileProcessingService;
@@ -78,7 +77,7 @@ public class PostController {
     }
 
     @PostMapping("/{username}/timeline")
-    public ResponseEntity<List<PostModel>> getAllPosts (
+    public ResponseEntity<List<PostResponse>> getAllPosts (
             @PathVariable String username
     ) throws Exception {
         UserModel user = userService.findByUsername(username);
@@ -86,11 +85,32 @@ public class PostController {
     }
 
     @PostMapping("/{username}/getUserPosts")
-    public ResponseEntity<List<PostModel>> getUserPosts (
+    public ResponseEntity<List<PostResponse>> getUserPosts (
             @PathVariable String username
     ) throws Exception {
         UserModel user = userService.findByUsername(username);
         return ResponseEntity.ok(postService.getUserPosts(user));
     }
+
+    @PostMapping("/{postId}/comment")
+    public ResponseEntity<?> addComment (
+            @PathVariable String postId,
+            @RequestBody Map<String, String> requestBody
+    ) throws Exception {
+        String username = requestBody.get("username");
+        String comment = requestBody.get("comment");
+
+        System.out.println("[USERNAME] "+username+ " " + "[POST ID] "+postId+" |[COMMENT] "+comment);
+        UserModel user = userService.findByUsername(username);
+        PostModel post = postService.getPost(Long.parseLong(postId));
+        commentService.addComment(comment, user, post);
+        return ResponseEntity.ok("Comment Added");
+    }
+
+    @PostMapping("/{postId/like")
+    public ResponseEntity<?> addLike (
+            @PathVariable String postId,
+            @ModelAttribute  likeRequest
+    )
 
 }
