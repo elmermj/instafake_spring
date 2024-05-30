@@ -1,5 +1,7 @@
 package com.fakeco.instafake.controllers;
 
+import com.fakeco.instafake.dto.CommentRequest;
+import com.fakeco.instafake.dto.LikeRequest;
 import com.fakeco.instafake.dto.PostResponse;
 import com.fakeco.instafake.dto.PostRequest;
 import com.fakeco.instafake.models.PostModel;
@@ -95,10 +97,10 @@ public class PostController {
     @PostMapping("/{postId}/comment")
     public ResponseEntity<?> addComment (
             @PathVariable String postId,
-            @RequestBody Map<String, String> requestBody
+            @RequestBody CommentRequest requestBody
     ) throws Exception {
-        String username = requestBody.get("username");
-        String comment = requestBody.get("comment");
+        String username = requestBody.getUsername();
+        String comment = requestBody.getComment();
 
         System.out.println("[USERNAME] "+username+ " " + "[POST ID] "+postId+" |[COMMENT] "+comment);
         UserModel user = userService.findByUsername(username);
@@ -110,7 +112,11 @@ public class PostController {
     @PostMapping("/{postId/like")
     public ResponseEntity<?> addLike (
             @PathVariable String postId,
-            @ModelAttribute  likeRequest
-    )
+            @ModelAttribute LikeRequest likeRequest
+    ){
+        Long userId = Long.parseLong(String.valueOf(likeRequest.getUserId()));
+
+        return ResponseEntity.ok("Like Added on POST ID ::: "+ postId);
+    }
 
 }
