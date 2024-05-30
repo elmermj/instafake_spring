@@ -30,10 +30,16 @@ public class UserModel implements UserDetails {
     private String username;
     @Column(nullable = false)
     private String realname;
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
     @Column(nullable = false)
     private String password;
+
+    private String profImageUrl;
+
+    private String bio;
+
+    private String fileName;
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     @Column(updatable = false)

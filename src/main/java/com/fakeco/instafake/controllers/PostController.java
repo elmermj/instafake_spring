@@ -1,17 +1,16 @@
 package com.fakeco.instafake.controllers;
 
-import com.fakeco.instafake.dto.CommentRequest;
-import com.fakeco.instafake.dto.LikeRequest;
-import com.fakeco.instafake.dto.PostResponse;
-import com.fakeco.instafake.dto.PostRequest;
+import com.fakeco.instafake.dto.request.CommentRequest;
+import com.fakeco.instafake.dto.request.LikeRequest;
+import com.fakeco.instafake.dto.response.Metadata;
+import com.fakeco.instafake.dto.response.PostResponse;
+import com.fakeco.instafake.dto.request.PostRequest;
+import com.fakeco.instafake.dto.response.PostThumbnailResponse;
+import com.fakeco.instafake.dto.response.UserDTOResponse;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
-import com.fakeco.instafake.services.CommentService;
-import com.fakeco.instafake.services.FileProcessingService;
-import com.fakeco.instafake.services.PostService;
-import com.fakeco.instafake.services.UserService;
+import com.fakeco.instafake.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -34,6 +33,9 @@ public class PostController {
 
     @Autowired
     private CommentService commentService;
+
+    @Autowired
+    private LikeService likeService;
 
     @Autowired
     FileProcessingService fileProcessingService;
@@ -51,13 +53,9 @@ public class PostController {
         if(user==null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not Authenticated");
         }else{
-            String filename = user.getUsername() +"_"
-                    + LocalDateTime.now().getYear()
-                    + LocalDateTime.now().getMonthValue()
-                    + LocalDateTime.now().getDayOfMonth()
-                    + LocalDateTime.now().getHour()
-                    + LocalDateTime.now().getMinute()
-                    + LocalDateTime.now().getSecond();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String formattedDateTime = LocalDateTime.now().format(formatter);
+            String filename = user.getUsername() +"_"+ formattedDateTime;
 
             ResponseEntity<String> uri = fileProcessingService.uploadFile(filename, file);
 
@@ -83,7 +81,12 @@ public class PostController {
             @PathVariable String username
     ) throws Exception {
         UserModel user = userService.findByUsername(username);
-        return ResponseEntity.ok(postService.getAllPosts());
+        return ResponseEntity.ok(postService.getTimeline());
+    }
+
+    @PostMapping("/explore")
+    public ResponseEntity<List<PostThumbnailResponse>> getExplore () throws Exception {
+        return ResponseEntity.ok(postService.getExplore());
     }
 
     @PostMapping("/{username}/getUserPosts")
@@ -104,19 +107,33 @@ public class PostController {
 
         System.out.println("[USERNAME] "+username+ " " + "[POST ID] "+postId+" |[COMMENT] "+comment);
         UserModel user = userService.findByUsername(username);
-        PostModel post = postService.getPost(Long.parseLong(postId));
+        PostModel post = postService.findById(Long.parseLong(postId));
         commentService.addComment(comment, user, post);
         return ResponseEntity.ok("Comment Added");
     }
 
-    @PostMapping("/{postId/like")
+    @PostMapping("/{postId}/like")
     public ResponseEntity<?> addLike (
             @PathVariable String postId,
             @ModelAttribute LikeRequest likeRequest
     ){
-        Long userId = Long.parseLong(String.valueOf(likeRequest.getUserId()));
+        UserModel user = userService.findById(Long.parseLong(String.valueOf(likeRequest.getUserId())));
+        PostModel post = postService.findById(Long.parseLong(String.valueOf(likeRequest.getPostId())));
+
+        likeService.likePost(post, user);
 
         return ResponseEntity.ok("Like Added on POST ID ::: "+ postId);
+    }
+
+    @PostMapping("/{postId}/like/users")
+    public ResponseEntity<List<UserDTOResponse>> getUsersLikes (
+            @PathVariable String postId
+    ){
+        PostModel post = postService.findById(Long.parseLong(String.valueOf(postId)));
+
+        List<UserDTOResponse> users = likeService.getUsersLikesByPostId(post);
+
+        return ResponseEntity.ok(users);
     }
 
 }

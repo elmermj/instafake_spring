@@ -1,4 +1,4 @@
-package com.fakeco.instafake.dto;
+package com.fakeco.instafake.dto.response;
 
 import lombok.Getter;
 import lombok.Setter;

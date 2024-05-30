@@ -1,22 +1,22 @@
 package com.fakeco.instafake.services;
 
-import com.fakeco.instafake.dto.CommentResponse;
-import com.fakeco.instafake.dto.PostResponse;
-import com.fakeco.instafake.dto.PostRequest;
+import com.fakeco.instafake.dto.response.CommentResponse;
+import com.fakeco.instafake.dto.response.PostResponse;
+import com.fakeco.instafake.dto.request.PostRequest;
+import com.fakeco.instafake.dto.response.PostThumbnailResponse;
 import com.fakeco.instafake.models.CommentModel;
+import com.fakeco.instafake.models.LikeModel;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
 import com.fakeco.instafake.repos.CommentRepository;
+import com.fakeco.instafake.repos.LikeRepository;
 import com.fakeco.instafake.repos.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +31,9 @@ public class PostService {
 
     @Autowired
     private FileProcessingService fileProcessingService;
+
+    @Autowired
+    private LikeRepository likeRepository;
 
     @Value("${file.upload-dir}")
     private String basePath;
@@ -48,21 +51,41 @@ public class PostService {
         return post;
     }
 
-    public PostModel getPost(Long postId) {
+    public PostModel findById(Long postId) {
         return postRepository.findById(postId).orElseThrow();
     }
 
-    public List<PostResponse> getAllPosts() {
+    public List<PostResponse> getTimeline() {
         List<PostModel> posts = postRepository.getPostsFromNewest();
-        return getPostResponses(posts);
+        return getPostsResponse(posts);
+    }
+
+    public List<PostThumbnailResponse> getExplore() {
+        List<PostModel> posts = postRepository.getPostsFromNewest();
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        return posts.stream().map(post -> {
+            String dynamicURL = baseUrl + "/" + post.getFileUrl();
+            System.out.println("FILE URL ::: "+dynamicURL);
+            return new PostThumbnailResponse(post);
+        }).collect(Collectors.toList());
     }
 
     public List<PostResponse> getUserPosts(UserModel user) {
         List<PostModel> posts = postRepository.getUserPosts(user.getId());
-        return getPostResponses(posts);
+        return getPostsResponse(posts);
     }
 
-    private List<PostResponse> getPostResponses(List<PostModel> posts) {
+    public List<PostThumbnailResponse> getUserPostsThumbnails(UserModel user) {
+        List<PostModel> posts = postRepository.getUserPosts(user.getId());
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        return posts.stream().map(post -> {
+            String dynamicURL = baseUrl + "/" + post.getFileUrl();
+            System.out.println("FILE URL ::: "+dynamicURL);
+            return new PostThumbnailResponse(post);
+        }).collect(Collectors.toList());
+    }
+
+    public List<PostResponse> getPostsResponse(List<PostModel> posts) {
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         return posts.stream().map(post -> {
             String dynamicURL = baseUrl + "/" + post.getFileUrl();
@@ -75,7 +98,9 @@ public class PostService {
                             comment.getUser().getUsername(),
                             comment.getCreatedAt()
                     )).collect(Collectors.toList());
-            return new PostResponse(post, commentResponses);
+            int likes = likeRepository.getLikesCountByPostId(post.getId());
+            return new PostResponse(post, commentResponses, likes);
         }).collect(Collectors.toList());
     }
+
 }

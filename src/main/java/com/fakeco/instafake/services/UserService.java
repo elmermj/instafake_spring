@@ -1,11 +1,10 @@
 package com.fakeco.instafake.services;
 
-import com.fakeco.instafake.dto.AuthenticationResponse;
+import com.fakeco.instafake.dto.request.AuthenticationRequest;
+import com.fakeco.instafake.dto.response.AuthenticationResponse;
+import com.fakeco.instafake.dto.response.Metadata;
 import com.fakeco.instafake.models.UserModel;
-import com.fakeco.instafake.models.enums.Roles;
 import com.fakeco.instafake.repos.UserRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.xml.bind.DatatypeConverter;
 import java.util.Collection;
-import java.util.Objects;
 
 
 @Service
@@ -39,7 +36,7 @@ public class UserService implements UserDetails {
         this.authenticationManager = authenticationManager;
     }
 
-    public AuthenticationResponse register(UserModel request){
+    public Metadata register(UserModel request){
         UserModel user = new UserModel();
         user.setRealname(request.getRealname());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -52,52 +49,23 @@ public class UserService implements UserDetails {
 
         String token = jwtService.generateToken(user);
 
-        return new AuthenticationResponse("Bearer "+token);
+        return new Metadata("Bearer "+token, user);
 
     }
 
-    public AuthenticationResponse authenticate(UserModel request){
+    public Metadata authenticate(AuthenticationRequest request){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         UserModel user = userRepository.findByUsername(request.getUsername());
 
         String token = jwtService.generateToken(user);
 
-        return new AuthenticationResponse(token);
+        return new Metadata("Bearer "+token, user);
     }
 
-    public UserModel getUserFromToken(String token) {
-        try {
-            String username = jwtService.extractUsername(token);
-
-            return userRepository.findByUsername(username);
-        } catch (Exception e) {
-            // Token is invalid or expired
-            return null;
-        }
+    public UserModel findById(Long id){
+        return userRepository.findById(id).orElseThrow();
     }
-
-
-    //CREATE
-    public void registerUser(UserModel user) throws Exception {
-        // Check if username or email already exists
-        if (userRepository.findByUsername(user.getUsername()) != null) {
-            throw new RuntimeException("Username already exists");
-        }
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        user.setPassword(user.getPassword());
-        user.setRole(Roles.USER);
-
-        System.out.println(user.getRole());
-
-        log.debug(user.getEmail() + " ::::::: " +user.getCreatedAt());
-
-        userRepository.save(user);
-    }
-
 
     //READ
     public UserModel findByUsername(String username) throws Exception {
@@ -105,18 +73,8 @@ public class UserService implements UserDetails {
         UserModel user = userRepository.findByUsername(username);
         System.out.println("TEST LOGIN RETURN USERNAME ::: "+user.getUsername());
 
+        System.out.println("TEST LOGIN RETURN USER ::: "+user);
         return user;
-    }
-
-    public boolean validateToken(String token) {
-        try {
-            byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary("123456789");
-//            Jwts.parser().setSigningKey(new String(apiKeySecretBytes)).parseClaimsJwt(token);
-            return true;
-        } catch (Exception e) {
-            // Token validation failed
-            return false;
-        }
     }
 
     @Override
