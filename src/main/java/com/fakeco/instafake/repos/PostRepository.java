@@ -18,8 +18,19 @@ public interface PostRepository extends JpaRepository<PostModel, Long> {
 
     @Query(value =
             "SELECT post_model.* FROM post_model " +
-            "JOIN follow_model ON post_model.user_id = follow_model.other_user_id " +
-            "WHERE follow_model.user_id = :user " +
-            "ORDER BY created_at DESC", nativeQuery = true)
+                    "JOIN follow_model ON post_model.user_id = follow_model.other_user_id " +
+                    "WHERE follow_model.user_id = :user " +
+                    "ORDER BY post_model.created_at DESC",
+            countQuery = "SELECT COUNT(*) FROM post_model " +
+                    "JOIN follow_model ON post_model.user_id = follow_model.other_user_id " +
+                    "WHERE follow_model.user_id = :user",
+            nativeQuery = true)
     Page<PostModel> getPostsFromUserTimeline(@Param("user") Long user, Pageable pageable);
+
+    @Query(value =
+            "SELECT post_model.* FROM post_model " +
+                    "ORDER BY post_model.created_at DESC",
+            countQuery = "SELECT COUNT(*) FROM post_model",
+            nativeQuery = true)
+    Page<PostModel> getExplorePosts(Pageable pageable);
 }

@@ -77,18 +77,23 @@ public class PostController {
     }
 
     @PostMapping("/{username}/timeline")
-    public ResponseEntity<Page<PostResponse>> getTimeline(
+    public ResponseEntity<List<PostResponse>> getTimeline(
             @PathVariable String username,
             @RequestParam int page,
             @RequestParam int size
     ) throws Exception {
+        System.out.println("TIMELINE REQUEST FROM "+username+" | PAGE "+page+" | SIZE "+size);
         UserModel user = userService.findByUsername(username);
+//        <PostResponse> posts = postService.getTimeline(user, page, size);
         return ResponseEntity.ok(postService.getTimeline(user, page, size));
     }
 
     @PostMapping("/explore")
-    public ResponseEntity<List<PostThumbnailResponse>> getExplore () throws Exception {
-        return ResponseEntity.ok(postService.getExplore());
+    public ResponseEntity<List<PostThumbnailResponse>> getExplore (
+            @RequestParam int page,
+            @RequestParam int size
+    ) throws Exception {
+        return ResponseEntity.ok(postService.getExplore(page, size));
     }
 
     @PostMapping("/{username}/getUserPosts")

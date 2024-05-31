@@ -57,10 +57,14 @@ public class PostService {
         return postRepository.findById(postId).orElseThrow();
     }
 
-    public Page<PostResponse> getTimeline(UserModel user, int page, int size) {
+    public List<PostResponse> getTimeline(UserModel user, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
+        System.out.println("Fetching timeline for user: "+ user.getId() + ", page: "+page+", size: "+size);
         Page<PostModel> posts = postRepository.getPostsFromUserTimeline(user.getId(), pageable);
-        return posts.map(this::convertToPostResponse);
+        System.out.println("Fetched "+posts.getTotalElements()+" posts for user: "+user.getUsername()+", page: "+page+", size: "+size);
+        return posts.stream()
+                .map(this::convertToPostResponse)
+                .collect(Collectors.toList());
     }
 
     private PostResponse convertToPostResponse(PostModel postModel) {
@@ -78,13 +82,14 @@ public class PostService {
     }
 
 
-    public List<PostThumbnailResponse> getExplore() {
-        List<PostModel> posts = postRepository.getPostsFromNewest();
+    public List<PostThumbnailResponse> getExplore(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PostModel> posts = postRepository.getExplorePosts(pageable);
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         System.out.println(baseUrl);
         return posts.stream().map(post -> {
             String dynamicURL = baseUrl + "/" + post.getFileUrl();
-            System.out.println("FILE URL ::: "+dynamicURL);
+            System.out.println("FILE URL ::: "+dynamicURL + " | POST ID ::: " + post.getId());
             return new PostThumbnailResponse(post);
         }).collect(Collectors.toList());
     }
@@ -109,6 +114,7 @@ public class PostService {
         return posts.stream().map(post -> {
             String dynamicURL = baseUrl + "/" + post.getFileUrl();
             System.out.println("FILE URL ::: "+dynamicURL);
+            post.setFileUrl(dynamicURL);
             List<CommentModel> commentModel =  commentRepository.getCommentsByPostId(post.getId());
             List<CommentResponse> commentResponses = commentModel.stream().map(
                     comment -> new CommentResponse(
