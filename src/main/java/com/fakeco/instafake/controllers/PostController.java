@@ -2,7 +2,6 @@ package com.fakeco.instafake.controllers;
 
 import com.fakeco.instafake.dto.request.CommentRequest;
 import com.fakeco.instafake.dto.request.LikeRequest;
-import com.fakeco.instafake.dto.response.Metadata;
 import com.fakeco.instafake.dto.response.PostResponse;
 import com.fakeco.instafake.dto.request.PostRequest;
 import com.fakeco.instafake.dto.response.PostThumbnailResponse;
@@ -11,6 +10,7 @@ import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
 import com.fakeco.instafake.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -77,11 +77,13 @@ public class PostController {
     }
 
     @PostMapping("/{username}/timeline")
-    public ResponseEntity<List<PostResponse>> getAllPosts (
-            @PathVariable String username
+    public ResponseEntity<Page<PostResponse>> getTimeline(
+            @PathVariable String username,
+            @RequestParam int page,
+            @RequestParam int size
     ) throws Exception {
         UserModel user = userService.findByUsername(username);
-        return ResponseEntity.ok(postService.getTimeline());
+        return ResponseEntity.ok(postService.getTimeline(user, page, size));
     }
 
     @PostMapping("/explore")

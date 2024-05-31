@@ -5,7 +5,6 @@ import com.fakeco.instafake.dto.response.PostResponse;
 import com.fakeco.instafake.dto.request.PostRequest;
 import com.fakeco.instafake.dto.response.PostThumbnailResponse;
 import com.fakeco.instafake.models.CommentModel;
-import com.fakeco.instafake.models.LikeModel;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
 import com.fakeco.instafake.repos.CommentRepository;
@@ -13,6 +12,9 @@ import com.fakeco.instafake.repos.LikeRepository;
 import com.fakeco.instafake.repos.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -55,14 +57,31 @@ public class PostService {
         return postRepository.findById(postId).orElseThrow();
     }
 
-    public List<PostResponse> getTimeline() {
-        List<PostModel> posts = postRepository.getPostsFromNewest();
-        return getPostsResponse(posts);
+    public Page<PostResponse> getTimeline(UserModel user, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PostModel> posts = postRepository.getPostsFromUserTimeline(user.getId(), pageable);
+        return posts.map(this::convertToPostResponse);
     }
+
+    private PostResponse convertToPostResponse(PostModel postModel) {
+        return new PostResponse(
+            postModel,
+            commentRepository.getCommentsByPostId(postModel.getId()).stream().map(
+                commentModel -> new CommentResponse(
+                    commentModel.getId(),
+                    commentModel.getBody(),
+                    commentModel.getUser().getUsername(),
+                    commentModel.getCreatedAt()
+                )).collect(Collectors.toList()),
+            likeRepository.getLikesCountByPostId(postModel.getId())
+        );
+    }
+
 
     public List<PostThumbnailResponse> getExplore() {
         List<PostModel> posts = postRepository.getPostsFromNewest();
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        System.out.println(baseUrl);
         return posts.stream().map(post -> {
             String dynamicURL = baseUrl + "/" + post.getFileUrl();
             System.out.println("FILE URL ::: "+dynamicURL);
