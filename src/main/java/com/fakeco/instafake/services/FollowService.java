@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
 @Service
 public class FollowService {
 
@@ -34,12 +33,17 @@ public class FollowService {
         followRepository.deleteByUserId(user.getId());
     }
 
-    public List<FollowModel> getFollowingCount(Long id){
-
-        return followRepository.getFollowings(id);
+    public void removeFollower(FollowRequest request){
+        UserModel user = userRepository.findById(request.getId()).orElseThrow();
+        followRepository.removeFollowerById(user.getId());
     }
 
-    public List<FollowModel> getFollowerCount(Long id){
-        return followRepository.getFollowers(id);
+    public List<Long> getFollowerIds(Long id){
+        return followRepository.getListOfFollowers(id);
+    }
+
+    public List<Long> getFollowingIds(Long id){
+        return followRepository.getListOfFollowing(id);
     }
 }
+

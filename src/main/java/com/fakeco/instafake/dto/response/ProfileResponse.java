@@ -13,11 +13,11 @@ public class ProfileResponse {
     private String profImageUrl;
     private String name;
     private String bio;
-    private int followers;
-    private int followings;
+    private List<Long> followers;
+    private List<Long> followings;
     private List<PostThumbnailResponse> thumbnails;
 
-    public ProfileResponse(UserDTOResponse userDTO, List<PostThumbnailResponse> thumbnails, int followers, int followings){
+    public ProfileResponse(UserDTOResponse userDTO, List<PostThumbnailResponse> thumbnails, List<Long> followers, List<Long> followings){
         this.id = userDTO.getId();
         this.username = userDTO.getUsername();
         this.profImageUrl = userDTO.getProfImageUrl();

@@ -104,33 +104,56 @@ public class PostController {
         return ResponseEntity.ok(postService.getUserPosts(user));
     }
 
+    @PostMapping("/{postId}/refresh")
+    public ResponseEntity<PostResponse> refreshPost(
+            @PathVariable String postId
+    ) throws Exception {
+        return ResponseEntity.ok(postService.refreshPost(postId));
+    }
+
     @PostMapping("/{postId}/comment")
-    public ResponseEntity<?> addComment (
+    public ResponseEntity<PostResponse> addComment (
             @PathVariable String postId,
             @RequestBody CommentRequest requestBody
     ) throws Exception {
         String username = requestBody.getUsername();
         String comment = requestBody.getComment();
 
-        System.out.println("[USERNAME] "+username+ " " + "[POST ID] "+postId+" |[COMMENT] "+comment);
+        System.out.println("[USERNAME] "+username+ " " + "[POST ID] "+postId+" |[COMMENT] "+requestBody.getComment());
         UserModel user = userService.findByUsername(username);
+        System.out.println("[USERNAME] "+user.getUsername()+ " " + "[POST ID] "+postId+" |[COMMENT] "+comment);
         PostModel post = postService.findById(Long.parseLong(postId));
-        commentService.addComment(comment, user, post);
-        return ResponseEntity.ok("Comment Added");
+        commentService.addComment(comment, user, post, user.getProfImageUrl());
+        PostResponse postResponse = postService.refreshPost(postId);
+        return ResponseEntity.ok(postResponse);
     }
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<?> addLike (
             @PathVariable String postId,
-            @ModelAttribute LikeRequest likeRequest
+            @RequestParam String userId
     ){
-        UserModel user = userService.findById(Long.parseLong(String.valueOf(likeRequest.getUserId())));
-        PostModel post = postService.findById(Long.parseLong(String.valueOf(likeRequest.getPostId())));
 
-        likeService.likePost(post, user);
+//        System.out.println("LIKE POST ID ::: " + likeRequest.getPostId() + " FROM USER ID " + likeRequest.getUserId());
+//
+//        if (likeRequest.getUserId() == null || likeRequest.getPostId() == null) {
+//            return ResponseEntity.badRequest().body("User ID or Post ID is null");
+//        }
+        Long userIdParsed = Long.parseLong(userId);
+        Long postIdParsed = Long.parseLong(postId);
 
-        return ResponseEntity.ok("Like Added on POST ID ::: "+ postId);
+        try {
+            UserModel user = userService.findById(userIdParsed);
+            PostModel post = postService.findById(postIdParsed);
+
+            likeService.likePost(post, user);
+
+            return ResponseEntity.ok("Like Added on POST ID ::: " + postId);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid User ID or Post ID");
+        }
     }
+
 
     @PostMapping("/{postId}/like/users")
     public ResponseEntity<List<UserDTOResponse>> getUsersLikes (

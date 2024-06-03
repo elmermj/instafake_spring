@@ -28,6 +28,7 @@ public class PostModel {
 
     private String fileName;
 
+    @Column(length = 1000)
     private String caption;
 
     @CreationTimestamp

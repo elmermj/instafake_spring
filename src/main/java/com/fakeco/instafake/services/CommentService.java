@@ -16,7 +16,7 @@ public class CommentService {
     @Autowired
     private CommentRepository commentRepository;
 
-    public void addComment(String comment, UserModel user, PostModel post) {
+    public void addComment(String comment, UserModel user, PostModel post, String commenterProfPic) {
         CommentModel commentModel = new CommentModel();
         commentModel.setUser(user);
         commentModel.setPost(post);

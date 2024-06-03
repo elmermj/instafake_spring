@@ -39,15 +39,23 @@ public class ProfileController {
         return new ResponseEntity<>((HttpStatus.ACCEPTED));
     }
 
+    @PostMapping("/removeFollower")
+    public ResponseEntity<?> removeFollower(@RequestBody FollowRequest request){
+        followService.removeFollower(request);
+        return new ResponseEntity<>((HttpStatus.ACCEPTED));
+    }
+
     @PostMapping("/{username}")
     public ResponseEntity<ProfileResponse> getProfileData(
             @PathVariable String username
     ) throws Exception {
         UserModel user = userService.findByUsername(username);
         UserDTOResponse userDTOResponse = new UserDTOResponse(user);
+        System.out.println("USER ID ::: " + userDTOResponse.getId());
         List<PostThumbnailResponse> postThumbnailResponseList = postService.getUserPostsThumbnails(user);
-        int followers = followService.getFollowerCount(user.getId()).stream().toList().size();
-        int followings = followService.getFollowingCount(user.getId()).stream().toList().size();
+        List<Long> followers = followService.getFollowerIds(user.getId());
+        System.out.println(followers);
+        List<Long> followings = followService.getFollowingIds(user.getId());
 
         ProfileResponse profileResponse = new ProfileResponse(
                 userDTOResponse,

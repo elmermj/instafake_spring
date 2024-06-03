@@ -5,11 +5,13 @@ import com.fakeco.instafake.dto.response.PostResponse;
 import com.fakeco.instafake.dto.request.PostRequest;
 import com.fakeco.instafake.dto.response.PostThumbnailResponse;
 import com.fakeco.instafake.models.CommentModel;
+import com.fakeco.instafake.models.LikeModel;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
 import com.fakeco.instafake.repos.CommentRepository;
 import com.fakeco.instafake.repos.LikeRepository;
 import com.fakeco.instafake.repos.PostRepository;
+import com.fakeco.instafake.repos.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -39,6 +41,8 @@ public class PostService {
 
     @Value("${file.upload-dir}")
     private String basePath;
+    @Autowired
+    private UserRepository userRepository;
 
     public PostModel createPost(PostRequest request, UserModel user, String uri, String filename) throws IOException {
 
@@ -59,28 +63,45 @@ public class PostService {
 
     public List<PostResponse> getTimeline(UserModel user, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        System.out.println("Fetching timeline for user: "+ user.getId() + ", page: "+page+", size: "+size);
+        System.out.println("Fetching timeline for user: " + user.getId() + ", page: " + page + ", size: " + size);
         Page<PostModel> posts = postRepository.getPostsFromUserTimeline(user.getId(), pageable);
-        System.out.println("Fetched "+posts.getTotalElements()+" posts for user: "+user.getUsername()+", page: "+page+", size: "+size);
-        return posts.stream()
-                .map(this::convertToPostResponse)
-                .collect(Collectors.toList());
-    }
+        System.out.println("Fetched " + posts.getTotalElements() + " posts for user: " + user.getUsername() + ", page: " + page + ", size: " + size);
 
-    private PostResponse convertToPostResponse(PostModel postModel) {
-        return new PostResponse(
-            postModel,
-            commentRepository.getCommentsByPostId(postModel.getId()).stream().map(
-                commentModel -> new CommentResponse(
-                    commentModel.getId(),
-                    commentModel.getBody(),
-                    commentModel.getUser().getUsername(),
-                    commentModel.getCreatedAt()
-                )).collect(Collectors.toList()),
-            likeRepository.getLikesCountByPostId(postModel.getId())
-        );
-    }
+        return posts.stream().map(
+                postModel -> {
+                    List<CommentResponse> comments = commentRepository.getCommentsByPostId(postModel.getId()).stream().map(
+                            commentModel -> {
+                                UserModel commenter = userRepository.findById(commentModel.getUser().getId()).orElseThrow();
+                                return new CommentResponse(
+                                        commentModel.getId(),
+                                        commentModel.getBody(),
+                                        commenter.getUsername(),
+                                        commentModel.getCreatedAt(),
+                                        commentModel.getCommenterProfPic()
+                                );
+                            }
+                    ).collect(Collectors.toList());
 
+                    int likes = likeRepository.getLikesCountByPostId(postModel.getId());
+                    List<LikeModel> likeModels = likeRepository.getLikesByPostId(postModel.getId());
+
+                    List<Long> userIds = likeModels.stream().map(
+                            likeModel -> {
+                                return likeModel.getUser().getId();
+                            }
+                    ).toList();
+
+                    return new PostResponse(
+                            postModel,
+                            comments,
+                            likes,
+                            postModel.getUser().getUsername(), // Get username directly from the postModel's user
+                            postModel.getUser().getProfImageUrl(),
+                            userIds// Get profImageUrl directly from the postModel's user
+                    );
+                }
+        ).collect(Collectors.toList());
+    }
 
     public List<PostThumbnailResponse> getExplore(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -115,17 +136,59 @@ public class PostService {
             String dynamicURL = baseUrl + "/" + post.getFileUrl();
             System.out.println("FILE URL ::: "+dynamicURL);
             post.setFileUrl(dynamicURL);
+            UserModel postedBy = userRepository.findUserByPostId(post.getId());
             List<CommentModel> commentModel =  commentRepository.getCommentsByPostId(post.getId());
             List<CommentResponse> commentResponses = commentModel.stream().map(
                     comment -> new CommentResponse(
                             comment.getId(),
                             comment.getBody(),
                             comment.getUser().getUsername(),
-                            comment.getCreatedAt()
+                            comment.getCreatedAt(),
+                            comment.getCommenterProfPic()
                     )).collect(Collectors.toList());
             int likes = likeRepository.getLikesCountByPostId(post.getId());
-            return new PostResponse(post, commentResponses, likes);
+            List<LikeModel> likeModels = likeRepository.getLikesByPostId(post.getId());
+
+            List<Long> userIds = likeModels.stream().map(
+                    likeModel -> {
+                        return likeModel.getUser().getId();
+                    }
+            ).toList();
+
+            return new PostResponse(post, commentResponses, likes, postedBy.getUsername(), postedBy.getProfImageUrl(), userIds);
         }).collect(Collectors.toList());
+    }
+
+    public PostResponse refreshPost(String id){
+        Long postId = Long.parseLong(id);
+        System.out.println("refreshPost ::: 1");
+        PostModel post = postRepository.findById(postId).orElseThrow();
+        System.out.println("refreshPost ::: 2");
+        UserModel postedBy = userRepository.findUserByPostId(post.getId());
+        System.out.println("refreshPost ::: 3");
+        List<CommentModel> commentModel =  commentRepository.getCommentsByPostId(post.getId());
+        System.out.println("refreshPost ::: 4");
+        List<CommentResponse> commentResponses = commentModel.stream().map(
+                comment -> new CommentResponse(
+                        comment.getId(),
+                        comment.getBody(),
+                        comment.getUser().getUsername(),
+                        comment.getCreatedAt(),
+                        comment.getCommenterProfPic()
+                )).collect(Collectors.toList());
+        System.out.println("refreshPost ::: 5");
+        int likes = likeRepository.getLikesCountByPostId(post.getId());
+        System.out.println("refreshPost ::: 6");
+        List<LikeModel> likeModels = likeRepository.getLikesByPostId(post.getId());
+        System.out.println("refreshPost ::: 7");
+
+        List<Long> userIds = likeModels.stream().map(
+                likeModel -> {
+                    return likeModel.getUser().getId();
+                }
+        ).toList();
+        System.out.println("refreshPost ::: 8");
+        return new PostResponse(post, commentResponses, likes, postedBy.getUsername(), postedBy.getProfImageUrl(), userIds);
     }
 
 }

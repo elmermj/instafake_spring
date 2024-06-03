@@ -1,8 +1,6 @@
 package com.fakeco.instafake.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +14,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentModel {
+public class StoryModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,15 +23,9 @@ public class CommentModel {
     @JoinColumn(name = "user_id", nullable = false)
     private UserModel user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
-    private PostModel post;
+    private String fileUrl;
 
-    @NotBlank
-    @Size(min = 1, max = 180)
-    private String body;
-
-    private String commenterProfPic;
+    private String fileName;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
