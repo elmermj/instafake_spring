@@ -23,6 +23,13 @@ public class LikeService {
         likeRepository.save(like);
     }
 
+    public void unlikePost(PostModel post, UserModel user){
+
+        LikeModel like = likeRepository.getLikeByPostIdAndUserId(post.getId(), user.getId());
+
+        likeRepository.delete(like);
+    }
+
     public List<UserDTOResponse> getUsersLikesByPostId(PostModel post){
 
         return likeRepository.getUsersLikesByPost(post).stream().map(

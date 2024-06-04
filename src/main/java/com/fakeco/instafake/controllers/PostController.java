@@ -134,11 +134,6 @@ public class PostController {
             @RequestParam String userId
     ){
 
-//        System.out.println("LIKE POST ID ::: " + likeRequest.getPostId() + " FROM USER ID " + likeRequest.getUserId());
-//
-//        if (likeRequest.getUserId() == null || likeRequest.getPostId() == null) {
-//            return ResponseEntity.badRequest().body("User ID or Post ID is null");
-//        }
         Long userIdParsed = Long.parseLong(userId);
         Long postIdParsed = Long.parseLong(postId);
 
@@ -149,6 +144,27 @@ public class PostController {
             likeService.likePost(post, user);
 
             return ResponseEntity.ok("Like Added on POST ID ::: " + postId);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid User ID or Post ID");
+        }
+    }
+
+    @PostMapping("/{postId}/unlike")
+    public ResponseEntity<?> removeLike (
+            @PathVariable String postId,
+            @RequestParam String userId
+    ){
+
+        Long userIdParsed = Long.parseLong(userId);
+        Long postIdParsed = Long.parseLong(postId);
+
+        try {
+            UserModel user = userService.findById(userIdParsed);
+            PostModel post = postService.findById(postIdParsed);
+
+            likeService.unlikePost(post, user);
+
+            return ResponseEntity.ok("Like Removed on POST ID ::: " + postId);
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body("Invalid User ID or Post ID");
         }
