@@ -36,6 +36,7 @@ public interface PostRepository extends JpaRepository<PostModel, Long> {
             nativeQuery = true)
     Page<PostModel> getExplorePosts(Pageable pageable);
 
-
+    @Query(value = "SELECT post_model.* FROM post_model", nativeQuery = true)
+    Page<PostModel> getAdminPost(Pageable pageable);
 
 }

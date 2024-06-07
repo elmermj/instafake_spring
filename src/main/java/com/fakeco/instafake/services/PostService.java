@@ -103,6 +103,49 @@ public class PostService {
         ).collect(Collectors.toList());
     }
 
+    public List<PostResponse> getAdminTimeline(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+//        System.out.println("Fetching timeline for user: " + user.getId() + ", page: " + page + ", size: " + size);
+//        Page<PostModel> posts = postRepository.getPostsFromUserTimeline(user.getId(), pageable);
+        Page<PostModel> posts = postRepository.getAdminPost(pageable);
+//        System.out.println("Fetched " + posts.getTotalElements() + " posts for user: " + user.getUsername() + ", page: " + page + ", size: " + size);
+
+        return posts.stream().map(
+                postModel -> {
+                    List<CommentResponse> comments = commentRepository.getCommentsByPostId(postModel.getId()).stream().map(
+                            commentModel -> {
+                                UserModel commenter = userRepository.findById(commentModel.getUser().getId()).orElseThrow();
+                                return new CommentResponse(
+                                        commentModel.getId(),
+                                        commentModel.getBody(),
+                                        commenter.getUsername(),
+                                        commentModel.getCreatedAt(),
+                                        commentModel.getCommenterProfPic()
+                                );
+                            }
+                    ).collect(Collectors.toList());
+
+                    int likes = likeRepository.getLikesCountByPostId(postModel.getId());
+                    List<LikeModel> likeModels = likeRepository.getLikesByPostId(postModel.getId());
+
+                    List<Long> userIds = likeModels.stream().map(
+                            likeModel -> {
+                                return likeModel.getUser().getId();
+                            }
+                    ).toList();
+
+                    return new PostResponse(
+                            postModel,
+                            comments,
+                            likes,
+                            postModel.getUser().getUsername(), // Get username directly from the postModel's user
+                            postModel.getUser().getProfImageUrl(),
+                            userIds// Get profImageUrl directly from the postModel's user
+                    );
+                }
+        ).collect(Collectors.toList());
+    }
+
     public List<PostThumbnailResponse> getExplore(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<PostModel> posts = postRepository.getExplorePosts(pageable);
