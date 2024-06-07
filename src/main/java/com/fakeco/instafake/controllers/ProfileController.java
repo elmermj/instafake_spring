@@ -29,6 +29,8 @@ public class ProfileController {
 
     @PostMapping("/follow")
     public ResponseEntity<?> follow(@RequestBody FollowRequest request){
+        System.out.println("MY ID ::: "+request.getId());
+        System.out.println("OTHER ID ::: "+request.getOtherId());
         followService.followUser(request);
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }

@@ -36,11 +36,13 @@ public interface FollowRepository extends JpaRepository<FollowModel, Long> {
     )
     List<Long> getListOfFollowing(@Param("user") Long user);
 
-    @Query(value = "DELETE FROM follow_table WHERE user_id = :user", nativeQuery = true)
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM follow_model WHERE user_id = :user", nativeQuery = true)
     void deleteByUserId(@Param("user") Long user);
 
     @Query(value = "DELETE FROM follow_model WHERE other_user_id = :user", nativeQuery = true)
-    void removeFollowerById(@Param("user") Long user); // Corrected column name
+    void removeFollowerById(@Param("user") Long user);
 }
 
 

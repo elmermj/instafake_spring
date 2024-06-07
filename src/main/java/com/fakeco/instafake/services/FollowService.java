@@ -20,7 +20,9 @@ public class FollowService {
 
     public void followUser(FollowRequest request){
         UserModel user = userRepository.findById(request.getId()).orElseThrow();
+        System.out.println("USER NAME ::: "+user.getUsername());
         UserModel otherUser = userRepository.findById(request.getOtherId()).orElseThrow();
+        System.out.println("OTHER USER NAME ::: "+otherUser.getUsername());
         FollowModel follow = FollowModel.builder()
                 .user(user)
                 .otherUser(otherUser)
