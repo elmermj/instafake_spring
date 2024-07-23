@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/users/register/**", "/api/users/login/**").permitAll() // Allow these endpoints without authentication
                         .requestMatchers("/server/medias/**").permitAll() // Allow access to media files
+//                        .requestMatchers("/location-websocket/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsImpl)

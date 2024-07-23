@@ -9,6 +9,8 @@ import com.fakeco.instafake.dto.response.UserDTOResponse;
 import com.fakeco.instafake.models.PostModel;
 import com.fakeco.instafake.models.UserModel;
 import com.fakeco.instafake.services.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
+    private static final Logger logger = LoggerFactory.getLogger(PostController.class);
     @Autowired
     private PostService postService;
 
@@ -46,7 +49,7 @@ public class PostController {
             @ModelAttribute PostRequest postRequest
     ) throws Exception {
 
-        System.out.println(postRequest.getUsername()+ " " + "[File Name] "+file.getName()+ " |[SIZE] "+file.getSize() +" BYTES");
+        logger.debug("{} [File Name] {} |[SIZE] {} BYTES", postRequest.getUsername(), file.getName(), file.getSize());
 
         UserModel user = userService.findByUsername(postRequest.getUsername());
 
@@ -82,9 +85,8 @@ public class PostController {
             @RequestParam int page,
             @RequestParam int size
     ) throws Exception {
-        System.out.println("TIMELINE REQUEST FROM "+username+" | PAGE "+page+" | SIZE "+size);
+        logger.debug("TIMELINE REQUEST FROM {} | PAGE {} | SIZE {}", username, page, size);
         UserModel user = userService.findByUsername(username);
-//        <PostResponse> posts = postService.getTimeline(user, page, size);
         return ResponseEntity.ok(postService.getTimeline(user, page, size));
     }
 
@@ -93,9 +95,6 @@ public class PostController {
             @RequestParam int page,
             @RequestParam int size
     ) throws Exception {
-//        System.out.println("TIMELINE REQUEST FROM "+username+" | PAGE "+page+" | SIZE "+size);
-//        UserModel user = userService.findByUsername(username);
-//        <PostResponse> posts = postService.getTimeline(user, page, size);
         return ResponseEntity.ok(postService.getAdminTimeline(page, size));
     }
 
